@@ -1,287 +1,35 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-export interface GabaritoCriterion {
-  id: string;
-  title: string;
-  expectation: string;
-  example: string;
-}
-
-export interface ScenarioGabarito {
-  id: number;
-  title: string;
-  originalObjective: string;
-  generalSummary: string;
-  expectedConclusion: string;
-  criteria: GabaritoCriterion[];
-}
-
-export const scGabaritos: Record<number, ScenarioGabarito> = {
-  1: {
-    id: 1,
-    title: "Cenário 1: O Caminho da Expansão (Upsell/Cross-sell)",
-    originalObjective: "Avaliar a capacidade do CS de mapear oportunidades, cruzar dados de Adoção e Suporte antes de agir, e construir um Business Case focado em ROI para contornar objeções financeiras.",
-    generalSummary: "O facilitador assume o papel de Roberto (CFO) na EBR. Ele está bastante resistente, altamente focado no corte global de despesas que implementou rigidamente em seu trimestre atual, e usará o recente Bug Crítico da sincronização SAP como pilar técnico para questionar a estabilidade da V360 e testar o sangue-frio e a governança comercial do Customer Success.",
-    expectedConclusion: "O CS deve conduzir uma transição comercial confiante e assertiva para o Executivo de Expansão (Account Manager), apresentando um Business Case pragmático focado em retorno veloz (Payback em 4 meses), mantendo o MRR original intacto e demonstrando sobriedade na crise.",
-    criteria: [
-      {
-        id: "c1_p1",
-        title: "Inteligência Emocional (A Crise)",
-        expectation: "O CS não deve se esquivar do Bug Crítico mencionado pelo CFO. Deve usá-lo para demonstrar governança plena e transparência técnica da situação, neutralizando a objeção de instabilidade.",
-        example: "Roberto, agradeço por pontuar o incidente do SAP. Como acompanhamos de perto, isolamos o problema, a integração foi totalmente restabelecida em X horas e aplicamos travas para não repetir. Com a casa em ordem, nosso foco agora é a eficiência do seu time."
-      },
-      {
-        id: "c1_p2",
-        title: "Traduzindo a Dor em Dinheiro",
-        expectation: "O CS deve evitar focar na pauta de 'trabalho excessivo' ou 'esforço braçal' operacional do dia-a-dia e ascender imediatamente para o impacto financeiro (como FTEs adicionais e custos invisíveis de folha) trazidos pelo crescimento geográfico do cliente.",
-        example: "Vimos que vocês acabaram de adquirir um novo CD. O processo manual da Joana já atinge o limite e custaria a contratação de 2 novos analistas (FTEs) para absorver o novo volume. Nosso objetivo é evitar esse aumento na sua folha."
-      },
-      {
-        id: "c1_p3",
-        title: "Comprovação de ROI",
-        expectation: "Demonstrar e prover o Business Case com números objetivos de payback célere para a expansão do módulo de Leitura Automática, provando que é um acréscimo rentável para a holding, alinhando com a meta anti-custos da Diretoria.",
-        example: "Pelo nosso cálculo validado com a sua equipe, a adoção do módulo de Leitura Automática tem um Payback de 4 meses. O valor poupado em multas e novas contratações paga a subscrição e ainda gera caixa."
-      },
-      {
-        id: "c1_p4",
-        title: "Governança Comercial (Mapeador)",
-        expectation: "O CS não abdica da precificação de tabela, defendendo a tona de valor total ao invés de proferir descontos na defensiva. Ele estabelece urgência e transfere a cadência final ao AM da V360 de forma coesa.",
-        example: "Roberto, a mitigação desse custo para este trimestre faz sentido para a sua estratégia? Sendo positivo, nosso especialista em Expansão está aqui na sala para detalhar como podemos encaixar isso no contrato vigente."
-      }
-    ]
+{
+  "name": "react-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx server.ts",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "start": "node dist/server.cjs",
+    "clean": "rm -rf dist server.js",
+    "lint": "tsc --noEmit"
   },
-  2: {
-    id: 2,
-    title: "Cenário 2: A Gestão de War Room Operacional (Crise)",
-    originalObjective: "Avaliar a resiliência relacional de um CS gerenciando pós-crise severa, liderando o encerramento seguro do plano de exceção tático e garantindo a retenção preventiva do contrato trimestral sem capitular na postura comercial.",
-    generalSummary: "O facilitador assume o papel de Mariana (CFO). Ela está neutra e concorda que a operação técnica foi restabelecida com sucesso, contudo permanece extremamente defensiva sobre estender a assinatura no próximo semestre devido ao desgaste histórico severo. Ela pode simular voz dupla com Carlos reclamando de complexidade.",
-    expectedConclusion: "O encerramento oficial do comitê de exceção (War Room) através de dados de volumetria consolidados, restabelecendo a barreira tática de atendimento regular e abrindo o diálogo com foco em saving estrutural.",
-    criteria: [
-      {
-        id: "c2_p1",
-        title: "Resgate Relacional (Assumir a Bronca)",
-        expectation: "Não tentar apagar ou minimizar os incidentes passados com as métricas boas de hoje. Assumir a responsabilidade transparente pelo aprendizado institucional obtido pela V360 na crise.",
-        example: "Mariana, Carlos. Conseguimos bater nossa meta de readoção, mas não esquecemos o gargalo técnico que causou isso há 2 meses. Isso foi uma lição aprendida para nós."
-      },
-      {
-        id: "c2_p2",
-        title: "Foco em Dados de Fechamento",
-        expectation: "Alavancar e expor números empíricos comprovando que os SLAs mínimos de reengajamento foram batidos, declarando encerrada a força-tarefa especial tática.",
-        example: "Os dados mostram: chegamos a 82% das notas ingressadas e nenhum bug crítico. Com isso, gostaria de formalizar o encerramento da nossa War Room e voltarmos à cadência normal de negócio."
-      },
-      {
-        id: "c2_p3",
-        title: "Lições Aprendidas (Post-Mortem V360)",
-        expectation: "Ilustrar de forma prática as ações corretivas estruturais efetuadas pela engenharia da V360 na plataforma, garantindo a solidez dos processos para justificar a renovação comercial à mesa.",
-        example: "Como garantia para a renovação, implementamos uma nova rotina na nossa ponta: agora temos um alerta preditivo se o engajamento do Carlos cair repentinamente, para não precisarmos chegar ao ponto de abandono novamente."
-      },
-      {
-        id: "c2_p4",
-        title: "Afastamento do 'Modo Suporte'",
-        expectation: "Fugir de discussões operacionais restritas ao helpdesk, redefinindo o CS como planejador estratégico corporativo voltado a economias de escala fiscal.",
-        example: "Com o sistema rodando liso novamente, nosso próximo passo na EBR regular será focar nas métricas de saving (FTE/Multas), para que vocês tenham segurança total no ROI da V360."
-      }
-    ]
+  "dependencies": {
+    "@google/genai": "^2.4.0",
+    "@tailwindcss/vite": "^4.1.14",
+    "@vitejs/plugin-react": "^5.0.4",
+    "lucide-react": "^0.546.0",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "vite": "^6.2.3",
+    "express": "^4.21.2",
+    "dotenv": "^17.2.3",
+    "motion": "^12.23.24"
   },
-  3: {
-    id: 3,
-    title: "Cenário 3: O Plano de Recuperação (Resgate da Conta)",
-    originalObjective: "Avaliar o diagnóstico clínico e a proposição ágil de resgate comercial sob alto risco iminente de abandono total do contrato anual pelo cliente em churn iminente.",
-    generalSummary: "O facilitador simula Helena (CFO) iniciando a call de re-kickoff friamente, declarando que o cancelamento formal já foi solicitado ao financeiro por falta de uso do novo time interno órfão de treinamento. O CS deve reverter a intenção demonstrando as consequências pecuniárias e operacionais invisíveis que o desligamento trará.",
-    expectedConclusion: "Congelamento da rescisão sob a vigência de um checkpoint-piloto tático de curtíssimo prazo (30 dias), com fast-track operacional e upgrade de versão isento de ônus adicionais imediatos.",
-    criteria: [
-      {
-        id: "c3_p1",
-        title: "Abertura Segura (Evitar Desculpas Vazias)",
-        expectation: "Não cair em desculpas corporativas genéricas sobre ausência mútua de contatos ou se postar como mero helpdesk. Focar no diagnóstico implícito do passivo invisível.",
-        example: "Helena, compreendo totalmente o bloqueio da renovação. Nossa auditoria foi justamente entender que cancelar agora representará um custo invisível altíssimo para a sua folha."
-      },
-      {
-        id: "c3_p2",
-        title: "Apresentação da Tese de Valor (ROI Estimado)",
-        expectation: "Ilustrar como o cancelamento sela despesas manuais permanentes de digitação pela nova equipe desassistida, transformando o abandono em prejuízo real no budget macro.",
-        example: "Se 95% do trabalho voltou a ser manual, sua equipe gasta X horas mês com digitação. A plataforma já está paga para absorver isso. O cancelamento efetiva esse custo de folha para sempre."
-      },
-      {
-        id: "c3_p3",
-        title: "Plano de Resgate (Fast-Track e Upgrade)",
-        expectation: "Apresentar um plano cirúrgico, descomplicado e de rápido ganho (Fast-track de 1 hora) alinhado ao upgrade gratuito de versão para mitigar o atrito percebido pela nova equipe operacional.",
-        example: "Já providenciamos o Upgrade da versão sem custo. E no lugar de manuais longos, desenhamos um Fast-Track de 1 hora só para a automação principal, devolvendo o tempo deles amanhã mesmo."
-      },
-      {
-        id: "c3_p4",
-        title: "Repactuação Executiva (O Checkpoint Final)",
-        expectation: "Negociar um termo de 30 dias de teste assistido, atrelando a permanência do distrato fiscal ao insucesso operacional das métricas de entrega.",
-        example: "Peço que suspenda a decisão de corte hoje. Aplicamos o Fast-Track na equipe. Faremos um Checkpoint em 30 dias: se a eficiência não subir drasticamente, nós mesmos apoiaremos a descontinuação da plataforma."
-      }
-    ]
-  },
-  4: {
-    id: 4,
-    title: "Cenário 4: O Resgate do Patrocinador (Tomador de Decisão Detrator)",
-    originalObjective: "Avaliar o controle relacional sob extrema agressividade e pressa orçamentária de um CFO que rotula o valor corporativo da plataforma como dispensável e sob forte risco de churn.",
-    generalSummary: "O facilitador simula Ricardo (CFO) em reunião relâmpago de 15 minutos, de braços cruzados, desafiando agressivamente a mensalidade e taxando o V360 como mero processador utilitário de XML.",
-    expectedConclusion: "Neutralização do feedback de detração tática (NPS 3), demonstrando que o V360 é um agregador crítico de compliance e bloqueio de fraudes fiscais de caixa.",
-    criteria: [
-      {
-        id: "c4_p1",
-        title: "Absorção do Choque (Pós-NPS)",
-        expectation: "Expressar alta empatia executiva e converter o NPS 3 de detração em concordância de falha de governança analítica nos reportes periódicos anteriores, sem se portar defensivo.",
-        example: "Ricardo, agradecemos a sinceridade. Se eu olhasse apenas para a V360 como um processador de notas, também acharia caro. Nossa falha foi não ter estabelecido com você, desde o início, os Indicadores de Sucesso focados no caixa da empresa."
-      },
-      {
-        id: "c4_p2",
-        title: "Tradução Operacional (Governança e Risco)",
-        expectation: "Deslocar o foco pragmático de simples 'ganho de minutos operacionais' para pautas robustas de governança de riscos, auditoria, conformidade fiscal e antifraude de notas fiscais.",
-        example: "O Felipe já garantiu que 95% das notas entram perfeitamente. O que não te mostramos é que, dentro desse volume, o sistema bloqueou X mil reais em pagamentos duplicados e barrados por divergência com os pedidos de compra."
-      },
-      {
-        id: "c4_p3",
-        title: "Proteção do Key User",
-        expectation: "Blindar ativamente a reputação técnica do Felipe na mesa da diretoria, solidificando as conquistas operacionais alcançadas em dupla com o V360.",
-        example: "A equipe do Felipe fez um trabalho brilhante estabilizando a operação. Com zero bugs críticos, o sistema virou um 'porteiro' seguro do seu caixa. O que precisamos agora é conectar essa segurança tática com os seus relatórios financeiros macro."
-      },
-      {
-        id: "c4_p4",
-        title: "Estabelecimento de Cadência (Plano de Sucesso)",
-        expectation: "Redefinir o perfil corporativo da V360 como 'Trusted Advisor' através de relatórios estratégicos semestrais de 20 minutos focados exclusivamente em retornos e auditoria.",
-        example: "Ricardo, para resolver o vácuo de informação, proponho preenchermos os seus KPIs de Risco Fiscal agora (Plano de Sucesso). Em seguida, agendamos um Status Report Executivo semestral, de apenas 20 minutos, focando apenas no bloqueio financeiro de fraudes. Faz sentido?"
-      }
-    ]
-  },
-  5: {
-    id: 5,
-    title: "Cenário 5: Pane no Motor (Queda de Adoção por Layoff)",
-    originalObjective: "Avaliar o manejo consultivo de contingências extremas de RH, posicionando o software de automação de notas como escudo ativo para suportar turnovers severos do time operacional.",
-    generalSummary: "O facilitador simula Marcelo (CFO), tenso sob imensa pressão pós-layoff severo. O CS monitorou queda vertiginosa de uso porque Camila (nova usuária) voltou a processos de planilhas locais para lidar com a exaustão física por sobrecarga. O CS não deve adotar cobrança de uso corporativo, mas ser parceiro proativo.",
-    expectedConclusion: "Compromisso de capacitação assistida de alta aderência (Shadowing) com a novata, de forma a protegê-la do atrito tático e assegurar conformidade do passivo fiscal do cliente.",
-    criteria: [
-      {
-        id: "c5_p1",
-        title: "Abordagem Consultiva (Sem Cobranças)",
-        expectation: "Evitar qualquer cobrança ou atrito de uso com o cliente fragilizado corporativamente. Empatizar e agir proativamente como solucionador tático no gargalo de transição.",
-        example: "Marcelo, não viemos cobrar o uso do sistema. Nosso monitoramento disparou um alerta vermelho com a saída da sua equipe anterior e nós interviemos rapidamente para que a Camila não se afogasse no processo manual."
-      },
-      {
-        id: "c5_p2",
-        title: "Ponte de Capacitação (Shadowing)",
-        expectation: "Desenhar roteiro direcionado a suporte direto operacional focado exclusivamente nos eixos técnicos críticos para resgatar a autonomia sem empurrar guias pesados.",
-        example: "Sabemos do corte de despesas e da sobrecarga da analista. Em vez de enviar manuais passivos, sentamos na operação com ela (Shadowing) e focamos em automatizar imediatamente as rotinas mais atrasadas desta semana."
-      },
-      {
-        id: "c5_p3",
-        title: "Tese de Valor (Mitigação de Passivo Fiscal)",
-        expectation: "Conectar o business case do ROI à própria reestruturação de pessoal do CFO: sem o V360, a operação esquelética gerará multas recorrentes e passivos fiscais cruciais.",
-        example: "Ao assumir automaticamente a varredura que antes era feita por 3 pessoas, a V360 não só viabilizou a redução da sua folha, como eliminou o risco iminente de autuações fiscais por notas perdidas em planilhas durante a transição."
-      },
-      {
-        id: "c5_p4",
-        title: "Validação e Proteção da Key User",
-        expectation: "Proteger e elevar o nome de Camila perante seu próprio superior CFO, apresentando-a como focada e apta para guiar a governança a partir dos módulos da V360.",
-        example: "Marcelo, a curva de adaptação da Camila foi brilhante após nosso alinhamento. A adoção voltou a decolar no nosso painel de controle e o que parecia um sistema complexo no início do mês virou o grande parceiro de governança dela hoje."
-      }
-    ]
-  },
-  6: {
-    id: 6,
-    title: "Cenário 6: O Paradoxo do Valor (Downsell Injustificado)",
-    originalObjective: "Avaliar o manejo de pressões cegas de Downsell compulsório corporativo da holding do cliente, usando profundidade técnica (lock-in) para rechaçar descontos desprovidos de embasamento operacional.",
-    generalSummary: "O facilitador simula o Dr. Arnaldo (CFO da Holding da MegaLog). Ele é inflexível, direto e impõe: ou concorda com desconto abrupto de 30% ou a plataforma inteira será revogada por metas corporativas globais de redução cega de orçamentos de tecnologia.",
-    expectedConclusion: "Blindagem de MRR original sob metas de auditorias de dados de lock-in, provando que um corte de 30% da automação criará gargalos milionários de expedição logística.",
-    criteria: [
-      {
-        id: "c6_p1",
-        title: "Resiliência frente à Pressão (Sem Desconto)",
-        expectation: "Manter a sobriedade comercial, contornando a narrativa pautada estritamente em 'concessões de retention', agindo fundamentalmente como analista de viabilidade.",
-        example: "Dr. Arnaldo, o papel da V360 é justamente proteger a rentabilidade da MegaLog. Aceitamos a reunião para provar que forçar esse corte de 30% no nosso contrato causará, imediatamente, um aumento massivo nos custos logísticos invisíveis da sua holding."
-      },
-      {
-        id: "c6_p2",
-        title: "Apresentação do Business Case Reverso",
-        expectation: "Mostrar de forma irrefutável com dados internos de hiper-adoção (102%) e lock-in operacional de que os módulos fiscalizadores sustentam diretamente a expedição faturada da distribuidora.",
-        example: "O seu sistema hoje está rodando a 102% de capacidade máxima. Após as reestruturações de folha, o nosso módulo de Conferência Cega assumiu todo o fluxo braçal do pátio. Cortar 30% dessa automação hoje significa deixar carretas engarrafadas na porta da distribuidora, impedindo o faturamento de saída da sua empresa."
-      },
-      {
-        id: "c6_p3",
-        title: "Alinhamento com o Key User (Prova Social)",
-        expectation: "Alavancar depoimentos internos da operação tática do Thiago para asseverar que suspender fluxos sistêmicos colapsará o carregamento físico do pátio logístico.",
-        example: "O time do Thiago coordena a expedição de forma impecável porque a V360 virou a espinha dorsal de validação dele. Desativar módulos agora é o equivalente a cortar 30% da energia elétrica do galpão de vocês sob o pretexto de economizar na conta de luz."
-      },
-      {
-        id: "c6_p4",
-        title: "Pacto de Estabilidade (Blindagem do MRR)",
-        expectation: "Firmar a higidez do prazo do contrato e converter o pleito de downsell em reportes quinzenais analíticos de savings assegurados pela V360 para fundamentar a manutenção total perante a holding.",
-        example: "Nosso contrato prevê essa sustentação plena por mais 10 meses e estamos aqui para garantir que sua operação não sofra panes. Para justificar a nossa manutenção total do escopo perante a holding, me comprometo a enviar quinzenalmente o volume de faturamento de carga que as nossas automações asseguraram de forma direta."
-      }
-    ]
-  },
-  7: {
-    id: 7,
-    title: "Cenário 7: O Voo de Cruzeiro (Criando Advogados da Marca)",
-    originalObjective: "Avaliar a tática de advocacy executiva, mobilizando clientes promotores (NPS 10) e muito saudáveis para expandir autoridade institucional perante o ecossistema nacional.",
-    generalSummary: "O facilitador simula Roberto (CFO) bastante receptivo, mas indisponível de rotina. Ele recusa o convite do comitê executivo e do palco aduzindo falta de tempo operacional em sua agenda estratégica decorrente de auditorias.",
-    expectedConclusion: "Ativação institucional do CFO no Conselho Executivo de Clientes (CAB) em modelo estritamente focado em reputação executiva, colhendo novas indicações comerciais por rede corporativa.",
-    criteria: [
-      {
-        id: "c7_p1",
-        title: "Abordagem de Advocacy (O Holofote Executivo)",
-        expectation: "Recusar pautas de favores ou centralizar propostas com foco nas necessidades da V360. Erguer o discurso estruturando como a vitrine do mercado projetará o prestígio profissional do CFO.",
-        example: "Roberto, compreendo perfeitamente o valor do seu tempo. O convite para o palco principal não é sobre o nosso sistema, é sobre a sua estratégia de governança, que hoje se tornou um verdadeiro referencial de mercado para o setor logístico."
-      },
-      {
-        id: "c7_p2",
-        title: "Introdução ao CAB (Influência Estratégica)",
-        expectation: "Vender o Conselho Executivo (CAB) como comitê corporativo de extrema exclusividade e debate de tendências entre C-Levels pares, e não como reunião operacional.",
-        example: "O Conselho de Clientes é um comitê exclusivo. Nele, o senhor debaterá tendências diretamente com a nossa mesa diretora e outros grandes líderes, tendo poder de voto para influenciar os rumos e as inovações tecnológicas do mercado."
-      },
-      {
-        id: "c7_p3",
-        title: "Captação de Indicações via Confiança",
-        expectation: "Extrair indicações comerciais de novos líderes na esfera de contatos do CFO de modo diplomático e natural, aproveitando o pico relacional do NPS 10 instalado de forma uníssona.",
-        example: "Olhando para essa blindagem que conquistamos na sua diretoria, o senhor enxerga outros executivos ou empresas parceiras na sua rede de relacionamento que enfrentam dores parecidas e colheriam esse mesmo valor? Uma introdução sua seria valiosíssima."
-      },
-      {
-        id: "c7_p4",
-        title: "Foco em Negócios (Fuga do Nível Tático)",
-        expectation: "Manter o teor da tese na governança corporativa, mitigação de riscos cambiais, compliance e rentabilidade financeira, declinando debates de suporte ou helpdesk no tempo executivo.",
-        example: "A operação diária com a Ana está consolidada em 100% de SLA e uso máximo do sistema. Minha missão com o senhor nesta mesa é estratégica: blindar o seu ecossistema e projetar os seus resultados como o grande benchmark do mercado nacional."
-      }
-    ]
-  },
-  8: {
-    id: 8,
-    title: "Cenário 8: O Foguete Low Touch (Plano de Evolução)",
-    originalObjective: "Avaliar o raciocínio de transição de canais, convertendo contas voluméricas variáveis oriundas do Low Touch para pacotes fixos estruturados estáveis e com assessoria estratégica recorrente.",
-    generalSummary: "O facilitador simula Sofia (CFO de orçamentos) indignada e reativa às parcelas extras resultantes de excedentes por expansão volumétrica de picos sazonais. Ela barra contratos fixos maiores afirmando que a holding impede expansão de despesas de TI.",
-    expectedConclusion: "Contratação do Plano de Evolução (Flat-fee) consolidando previsibilidade tributária e mitigando surpresas em picos, transformando suporte em parceria de CS macro.",
-    criteria: [
-      {
-        id: "c8_p1",
-        title: "Abordagem da Dor Puxando o Crescimento",
-        expectation: "Esclarecer que as taxas sobressalentes não consistem em multas de sistema, mas simbolizam o próprio êxito técnico e tração comercial das franquias com os pátios expandidos do cliente.",
-        example: "Sofia, o faturamento variável foi um reflexo do crescimento acelerado de vocês. A operação escalou 250% no nosso painel com a abertura das filiais. O plano Controle cumpriu o papel inicial, mas agora virou um teto que pune o sucesso da FastCommerce."
-      },
-      {
-        id: "c8_p2",
-        title: "Foco em Previsibilidade Financeira",
-        expectation: "Estruturar o business case em previsões de fluxos de caixa, evidenciando previsibilidade total contra oscilações de faturamento em vez de defender cortes ou demissões operacionais.",
-        example: "O nosso Plano de Evolução foi desenhado justamente para eliminar essa volatilidade. A nova versão fixa esse custo. Ela absorve todo o excedente atual e garante a folga necessária para vocês abrirem as novas filiais planejadas sem gerar um real de surpresa no caixa."
-      },
-      {
-        id: "c8_p3",
-        title: "Venda de Modelo de Atendimento (Governança)",
-        expectation: "Argumentar que migrar do Low Touch adiciona benefícios estratégicos diretos, provendo revisões trimestrais consultivas (EBRs) para blindar as diretrizes orçamentárias.",
-        example: "Além da trava no pacote de volume, a FastCommerce avança para a nossa camada de atendimento estratégico. Isso significa que, a cada trimestre, eu sentarei com você em uma Revisão Executiva (EBR) focada em preencher suas metas de orçamento, garantindo transparência direta para sua cadeira."
-      },
-      {
-        id: "c8_p4",
-        title: "Transição Fluida para a Venda (Mapeador)",
-        expectation: "Prover as teses de payback, colher alinhamento de intenção com a CFO e transitar a negociação final ao AM com clareza técnica e segurança corporativa.",
-        example: "Sofia, essa estrutura de custo fixo previsível garante a tranquilidade que o seu planejamento orçamentário exige para este ano? Sendo positivo, nosso especialista em Expansão está aqui para detalhar o aditivo e proteger sua próxima fatura."
-      }
-    ]
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.0",
+    "tailwindcss": "^4.1.14",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3",
+    "@types/express": "^4.17.21"
   }
-};
+}
