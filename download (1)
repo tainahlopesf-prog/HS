@@ -1,0 +1,814 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState } from "react";
+import { Scenario } from "../types";
+import {
+  Activity,
+  ShieldCheck,
+  HeartHandshake,
+  Eye,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  ShieldX,
+  HelpCircle,
+  LayoutDashboard,
+  CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+  Calendar,
+  Ticket,
+  CircleDot,
+  Layers,
+  Award,
+  ChevronRight,
+  RefreshCw,
+  Mail
+} from "lucide-react";
+
+interface DashboardProps {
+  scenario: Scenario;
+}
+
+interface MockScenarioData {
+  healthHistory: number[];
+  historicalLabels: string[];
+  chartMetricsTitle: string;
+  chartMetricsValue: number[];
+  tickets: {
+    id: string;
+    type: "BUG" | "SUPORTE" | "DUVIDA";
+    subject: string;
+    openedAt: string;
+    status: "RESOLVIDO" | "EM_ANDAMENTO" | "CRITICO";
+    severity: "ALTA" | "MEDIA" | "BAIXA";
+    user: string;
+  }[];
+  timeline: {
+    daysAgo: number;
+    title: string;
+    desc: string;
+    type: "SYSTEM" | "RELATION" | "MARKET" | "INTEGRATION";
+  }[];
+}
+
+const getMockDataByScenario = (scenarioId: number): MockScenarioData => {
+  switch (scenarioId) {
+    case 1:
+      return {
+        healthHistory: [86, 88, 89, 90, 91, 91],
+        historicalLabels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun (Atual)"],
+        chartMetricsTitle: "Eficiência de Escrituração (%)",
+        chartMetricsValue: [95, 92, 88, 72, 58, 45], // drastic drop
+        tickets: [
+          { id: "TKT-4890", type: "BUG", subject: "Nenhuma nota sendo capturada via SAP", openedAt: "22h atrás", status: "CRITICO", severity: "ALTA", user: "Joana Silva" },
+          { id: "TKT-4712", type: "SUPORTE", subject: "Ajuste na franquia de escriturador adicional", openedAt: "5 dias atrás", status: "RESOLVIDO", severity: "MEDIA", user: "Joana Silva" },
+          { id: "TKT-4610", type: "DUVIDA", subject: "Dúvida no fluxo de conferência de serviço fiscal", openedAt: "12 dias atrás", status: "RESOLVIDO", severity: "BAIXA", user: "Joana Silva" }
+        ],
+        timeline: [
+          { daysAgo: 1, title: "Bug Crítico Aberto", desc: "Sincronização SAP parou de capturar notas fiscais.", type: "INTEGRATION" },
+          { daysAgo: 5, title: "Touchpoint Tático de CS", desc: "Touchpoint operacional para repasse de chamados com Joana Silva.", type: "RELATION" },
+          { daysAgo: 12, title: "Evento M&A Estratégico", desc: "Cliente adquiriu e agregou um novo Centro de Distribuição (Expansão).", type: "MARKET" },
+          { daysAgo: 45, title: "Pesquisa NPS Lançada", desc: "CFO respondeu NPS com nota 9. Key User deu nota 8 alegando fadiga.", type: "RELATION" }
+        ]
+      };
+    case 2:
+      return {
+        healthHistory: [85, 83, 71, 65, 60, 58], // descending
+        historicalLabels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun (Atual)"],
+        chartMetricsTitle: "Notas Ingressadas vs. Contrato (%)",
+        chartMetricsValue: [85, 80, 55, 40, 30, 25], // steep drop in usage
+        tickets: [
+          { id: "TKT-4122", type: "BUG", subject: "[PATCH] Instabilidade e falhas de integração SEFAZ RFC", openedAt: "48h atrás", status: "RESOLVIDO", severity: "ALTA", user: "Carlos (Key User)" },
+          { id: "TKT-3911", type: "SUPORTE", subject: "Ambiente de homologação inalcançável", openedAt: "14 dias atrás", status: "RESOLVIDO", severity: "MEDIA", user: "Carlos (Key User)" }
+        ],
+        timeline: [
+          { daysAgo: 2, title: "Deploy de Correção Crítica", desc: "Engenharia aplicou patch de estabilidade e fechou todos os erros de integração.", type: "INTEGRATION" },
+          { daysAgo: 15, title: "Envio de Feedback Crítico", desc: "Carlos reporta exaustão em reuniões e avisa sobre migração para ERP nativo.", type: "RELATION" },
+          { daysAgo: 30, title: "Pesquisa de NPS Recebida", desc: "Carlos submete NPS nota 3 detalhando perda de produtividade.", type: "RELATION" },
+          { daysAgo: 60, title: "Alerta de Desengajamento", desc: "Nível de processamento caiu abaixo de 50%.", type: "SYSTEM" }
+        ]
+      };
+    case 3:
+      return {
+        healthHistory: [70, 65, 58, 48, 38, 35], // death spiral
+        historicalLabels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun (Atual)"],
+        chartMetricsTitle: "Consumo de Notas (%)",
+        chartMetricsValue: [80, 65, 40, 22, 10, 5],
+        tickets: [], // no tickets!
+        timeline: [
+          { daysAgo: 5, title: "Sinal de Rescisão", desc: "Recebida intenção formal de suspensão/descontinuidade por parte da Helena.", type: "MARKET" },
+          { daysAgo: 62, title: "Último Contato Realizado", desc: "CSM fez tentativa de contato sem resposta (vácuo total).", type: "RELATION" },
+          { daysAgo: 180, title: "Reestruturação Fiscal Interna", desc: "Demitida equipe operacional antiga. Marcos assume como Key User sem treinamento.", type: "MARKET" },
+          { daysAgo: 240, title: "Aviso de Instabilidade de Versão", desc: "Sistema está operando em versão obsoleta sem atualizações há 12 meses.", type: "SYSTEM" }
+        ]
+      };
+    case 4:
+      return {
+        healthHistory: [88, 85, 86, 75, 70, 68],
+        historicalLabels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun (Atual)"],
+        chartMetricsTitle: "Notas Ingressadas (%)",
+        chartMetricsValue: [92, 94, 95, 95, 95, 95], // technical perfection, stable
+        tickets: [
+          { id: "TKT-3120", type: "SUPORTE", subject: "Exportação de relatórios auxiliares DDA", openedAt: "18 dias atrás", status: "RESOLVIDO", severity: "BAIXA", user: "Felipe" }
+        ],
+        timeline: [
+          { daysAgo: 1, title: "Detração Crítica CFO", desc: "Aviso: Ricardo deu nota NPS 3 alegando falta de retorno tangível de valor.", type: "RELATION" },
+          { daysAgo: 10, title: "Log de Sucesso tático", desc: "Felipe (Analista) elogia de forma efusiva o suporte no fechamento.", type: "RELATION" },
+          { daysAgo: 80, title: "EBR Agendada (Cancelada)", desc: "CSM tentou agenda executiva com CFO, que cancelou por falta de tempo.", type: "RELATION" }
+        ]
+      };
+    case 5:
+      return {
+        healthHistory: [82, 79, 75, 68, 55, 48],
+        historicalLabels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun (Atual)"],
+        chartMetricsTitle: "Notas Ingressadas vs. Contrato (%)",
+        chartMetricsValue: [85, 82, 80, 52, 35, 30], // rapid drop due to layoff
+        tickets: [],
+        timeline: [
+          { daysAgo: 18, title: "Mudança de Ponto de Contato", desc: "Camila assume supervisão fiscal sob alta sobrecarga operacional.", type: "RELATION" },
+          { daysAgo: 24, title: "Enxugamento da Equipe (Layoff)", desc: "Empresa executa layoff drástico. Tiago (ex-Key User) é desligado.", type: "MARKET" },
+          { daysAgo: 45, title: "Dúvida Operacional Camila", desc: "Contato rápido reportando fadiga de lidar com complexidade.", type: "RELATION" }
+        ]
+      };
+    case 6:
+      return {
+        healthHistory: [93, 94, 94, 95, 95, 95], // healthy
+        historicalLabels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun (Atual)"],
+        chartMetricsTitle: "Consumo Geral de Franquia (%)",
+        chartMetricsValue: [98, 100, 102, 101, 103, 102], // maximum usage
+        tickets: [
+          { id: "TKT-3490", type: "DUVIDA", subject: "Ajuste fino no fluxo de Conferência Cega", openedAt: "4 dias atrás", status: "RESOLVIDO", severity: "BAIXA", user: "Thiago" }
+        ],
+        timeline: [
+          { daysAgo: 2, title: "Notificação de Downsell", desc: "Pressão corporativa cega da holding ordena aditivo de redução de 30% ou distrato.", type: "MARKET" },
+          { daysAgo: 25, title: "EBR de Performance", desc: "Sucesso logístico apresentado. Thiago confirma que o time não opera sem a V360.", type: "RELATION" },
+          { daysAgo: 90, title: "Metas de TI da Controladora", desc: "Holding dispara meta compulsória global de cortes de despesas.", type: "MARKET" }
+        ]
+      };
+    case 7:
+      return {
+        healthHistory: [85, 87, 88, 92, 94, 96],
+        historicalLabels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun (Atual)"],
+        chartMetricsTitle: "Taxa de Automação Fluida (%)",
+        chartMetricsValue: [78, 82, 86, 92, 95, 98],
+        tickets: [
+          { id: "TKT-3522", type: "DUVIDA", subject: "Integração estendida com DDA", openedAt: "6 dias atrás", status: "RESOLVIDO", severity: "BAIXA", user: "Ana" }
+        ],
+        timeline: [
+          { daysAgo: 3, title: "Promotor Registrado", desc: "Ana envia NPS 10 elogiando a parceria consolidada.", type: "RELATION" },
+          { daysAgo: 14, title: "Auditoria Externa Iniciada", desc: "CFO focado em assegurar processos fiscais corretos para fechar contabilidade.", type: "SYSTEM" },
+          { daysAgo: 30, title: "Sucesso Operacional Validado", desc: "EBR bem sucedida consolidou governança fiscal sólida do ano.", type: "RELATION" }
+        ]
+      };
+    case 8:
+      return {
+        healthHistory: [80, 81, 83, 85, 86, 88],
+        historicalLabels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun (Atual)"],
+        chartMetricsTitle: "Uso da Capacidade Hub (%)",
+        chartMetricsValue: [75, 78, 80, 82, 85, 86],
+        tickets: [
+          { id: "TKT-3591", type: "SUPORTE", subject: "Ajuste na volumetria de faturamento excedente", openedAt: "10 dias atrás", status: "RESOLVIDO", severity: "MEDIA", user: "Bruno" }
+        ],
+        timeline: [
+          { daysAgo: 4, title: "Feedback de Faturamento", desc: "Sofia expressa preocupação com o excedente inesperado de faturamento variável.", type: "SYSTEM" },
+          { daysAgo: 15, title: "Alinhamento Mensal", desc: "Bruno elogia a agilidade operacional no carregamento.", type: "RELATION" }
+        ]
+      };
+    default:
+      return {
+        healthHistory: [70, 72, 75, 76, 78, 80],
+        historicalLabels: ["Mês -5", "Mês -4", "Mês -3", "Mês -2", "Mês -1", "Mês Atual"],
+        chartMetricsTitle: "Nota Média de Adoção (%)",
+        chartMetricsValue: [65, 68, 70, 72, 74, 75],
+        tickets: [],
+        timeline: [
+          { daysAgo: 10, title: "Sincronização Mensal", desc: "Rotas técnicas normais.", type: "SYSTEM" }
+        ]
+      };
+  }
+};
+
+export const Dashboard: React.FC<DashboardProps> = ({ scenario }) => {
+  const [activeTab, setActiveTab] = useState<"geral" | "adocao" | "suporte" | "relacionamento">("geral");
+  const [hoveredPoint, setHoveredPoint] = useState<{ index: number; x: number; y: number } | null>(null);
+
+  const data = scenario.dashboardData;
+  const hs = data.healthScore;
+  const mock = getMockDataByScenario(scenario.id);
+
+  // Setup color theme according to actual Health Score
+  let themeColor = "#ff4444";
+  let themeBg = "bg-[#ff4444]/15 border-[#ff4444]/30 text-[#ff4444]";
+  let themeTextClass = "text-[#ff4444]";
+  if (hs > 80) {
+    themeColor = "#00ff88";
+    themeBg = "bg-[#00ff88]/15 border-[#00ff88]/30 text-[#00ff88]";
+    themeTextClass = "text-[#00ff88]";
+  } else if (hs >= 50) {
+    themeColor = "#D46900";
+    themeBg = "bg-[#D46900]/15 border-[#D46900]/30 text-[#D46900]";
+    themeTextClass = "text-[#D46900]";
+  }
+
+  // Radial track calculations
+  const radius = 48;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (hs / 100) * circumference;
+
+  return (
+    <div id="v360-dashboard-root" className="bg-[#050B2E]/60 backdrop-blur-md border border-white/10 rounded-[15px] p-6 text-white space-y-6 shadow-2xl relative overflow-hidden flex flex-col justify-between">
+      
+      {/* Absolute decorative backlights */}
+      <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-[#6A38B3] blur-[80px] opacity-20 pointer-events-none"></div>
+      <div className="absolute -bottom-20 -left-20 w-48 h-48 rounded-full bg-[#D46900] blur-[80px] opacity-15 pointer-events-none"></div>
+
+      {/* DASHBOARD CONSOLE STRIP */}
+      <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+        <div className="flex items-center space-x-3">
+          <div className="bg-[#6A38B3]/20 border border-[#6A38B3]/50 p-2.5 rounded-[12px] text-[#D46900]">
+            <LayoutDashboard size={20} />
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="text-[9px] font-mono tracking-[0.2em] text-[#D46900] font-bold uppercase">Painel de Métricas Real-Time</span>
+              <span className="w-1.5 h-1.5 bg-[#00ff88] rounded-full animate-ping"></span>
+            </div>
+            <h2 id="dashboard-client-title" className="text-xl font-display uppercase tracking-tight text-white leading-none font-normal mt-0.5">
+              Simulação: {scenario.profile.client}
+            </h2>
+          </div>
+        </div>
+
+        {/* Current Health Score Level Widget */}
+        <div className="flex items-center space-x-3 self-start sm:self-center">
+          <div className="text-right hidden md:block font-mono">
+            <span className="text-[9px] text-[#E0E0E0] uppercase block">Foco de Atuação</span>
+            <span className="text-[10px] font-bold text-[#D46900] uppercase block leading-none mt-0.5">{data.quadrant.split(" (")[0]}</span>
+          </div>
+          <div className={`${themeBg} border px-4 py-1.5 rounded-[12px] flex items-center space-x-2 text-[10px] uppercase font-bold tracking-wider`}>
+            <Activity size={12} />
+            <span>{hs <= 50 ? "Risco Crítico" : hs <= 80 ? "Neutro / Monitoramento" : "Saudável / Expansão"}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* HISTORICAL GRAPHICS AND MATRIX TOP ROW */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        
+        {/* WIDGET A: CONCENTRIC DIAL MEASURE (3 cols) */}
+        <div className="xl:col-span-3 bg-white/5 border border-white/5 rounded-[15px] p-4 flex flex-col items-center justify-center text-center relative">
+          <span className="text-[9px] font-mono text-[#E0E0E0] uppercase tracking-wider font-bold mb-3 block">Health Score Geral</span>
+          
+          <div className="relative flex items-center justify-center">
+            <svg className="w-32 h-32 transform -rotate-90">
+              <circle
+                cx="64"
+                cy="64"
+                r={radius}
+                className="stroke-white/5"
+                strokeWidth="8"
+                fill="transparent"
+              />
+              <circle
+                cx="64"
+                cy="64"
+                r={radius}
+                stroke={themeColor}
+                strokeWidth="8"
+                fill="transparent"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                className="transition-all duration-1000 ease-out"
+              />
+            </svg>
+            <div className="absolute text-center flex flex-col items-center justify-center">
+              <span id="dashboard-gauge-value" className={`text-4xl font-display font-normal tracking-tight block leading-none ${themeTextClass}`}>
+                {hs}
+              </span>
+              <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest font-bold mt-1">Pontos</span>
+            </div>
+          </div>
+
+          <div className="w-full text-[9px] font-mono bg-[#050B2E] border border-white/5 px-2.5 py-1.5 rounded-[8px] text-gray-300 mt-4 leading-normal">
+            <div>Foco: <span className="font-extrabold text-[#D46900] uppercase">{scenario.profile.segment}</span></div>
+          </div>
+        </div>
+
+        {/* WIDGET B: TIME-SERIES EVOLUTION GRAPH (5 cols) */}
+        <div className="xl:col-span-5 bg-white/5 border border-white/5 rounded-[15px] p-4 flex flex-col justify-between relative">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-mono text-[#D46900] uppercase tracking-wider font-bold">Evolução do Health Score</span>
+            <span className="text-[9px] font-mono text-gray-400">Últimos 6 Meses</span>
+          </div>
+
+          {/* SVG Historical Chart */}
+          <div className="relative w-full h-32 mt-2">
+            <svg className="w-full h-full overflow-visible">
+              {/* Grid Lines */}
+              <line x1="0" y1="20" x2="100%" y2="20" stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
+              <line x1="0" y1="60" x2="100%" y2="60" stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
+              <line x1="0" y1="100" x2="100%" y2="100" stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
+
+              {/* Dynamic Path Maker */}
+              {(() => {
+                const points = mock.healthHistory;
+                const width = 280; // approximate viewbox width
+                const height = 110;
+                // Min potential score is 0, Max potential is 100
+                const mapY = (val: number) => height - (val / 100) * height + 10;
+                const mapX = (idx: number) => (idx / (points.length - 1)) * 90 + "%";
+
+                const pathD = points.map((p, idx) => {
+                  const xCoord = (idx / (points.length - 1)) * 100; // % values
+                  return `${idx === 0 ? "M" : "L"} ${xCoord}% ${mapY(p)}`;
+                }).join(" ");
+
+                return (
+                  <>
+                    <path
+                      d={pathD}
+                      fill="none"
+                      stroke="url(#gradient-line)"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                    />
+
+                    {/* Gradient Definitions */}
+                    <defs>
+                      <linearGradient id="gradient-line" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#D46900" />
+                        <stop offset="100%" stopColor="#6A38B3" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Nodes */}
+                    {points.map((p, idx) => {
+                      const yVal = mapY(p);
+                      const xPerc = (idx / (points.length - 1)) * 100 + "%";
+                      const isCurrentNode = idx === points.length - 1;
+
+                      return (
+                        <g
+                          key={idx}
+                          className="cursor-pointer group"
+                          onMouseEnter={() => setHoveredPoint({ index: idx, x: idx * 56, y: yVal })}
+                          onMouseLeave={() => setHoveredPoint(null)}
+                        >
+                          <circle
+                            cx={xPerc}
+                            cy={yVal}
+                            r={isCurrentNode ? "6" : "4.5"}
+                            className={`${
+                              isCurrentNode ? "fill-[#00ff88]" : "fill-[#D46900]"
+                            } stroke-[#050B2E] stroke-2 hover:r-7 transition-all duration-200`}
+                          />
+                        </g>
+                      );
+                    })}
+                  </>
+                );
+              })()}
+            </svg>
+
+            {/* Custom Tooltip */}
+            {hoveredPoint !== null && (
+              <div
+                className="absolute bg-[#050B2E]/95 border border-white/20 p-2 rounded-lg text-[9px] font-mono shadow-xl z-20 pointer-events-none"
+                style={{
+                  left: `${(hoveredPoint.index / 5) * 80}%`,
+                  bottom: "105%"
+                }}
+              >
+                <div className="font-bold text-[#D46900] uppercase">{mock.historicalLabels[hoveredPoint.index]}</div>
+                <div className="text-white mt-0.5">Health Score: <span className="font-extrabold text-[#00ff88]">{mock.healthHistory[hoveredPoint.index]}</span></div>
+              </div>
+            )}
+          </div>
+
+          {/* Month Labels */}
+          <div className="flex justify-between text-[8px] text-gray-400 font-mono pt-1">
+            {mock.historicalLabels.map((l, i) => (
+              <span key={i}>{l}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* WIDGET C: POTENTIAL X HEALTH SCORE GRID MATRIX (4 cols) */}
+        <div className="xl:col-span-4 bg-white/5 border border-[#ffffff]/5 rounded-[15px] p-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-mono text-[#D46900] uppercase tracking-wider font-bold">Matriz: Potencial X Health Score</span>
+            <span className="text-[8px] font-mono text-gray-400 uppercase">Foco de Atuação</span>
+          </div>
+
+          {/* 2x2 Grid Simulation */}
+          <div className="grid grid-cols-2 gap-2 text-[8.5px] font-bold uppercase tracking-wider my-1 relative">
+            
+            {/* Top Left: Estabilização para Retenção */}
+            <div className={`p-2.5 rounded-[10px] border flex flex-col justify-between min-h-[58px] ${
+              scenario.dashboardData.quadrant.includes("Estabilização")
+                ? "bg-[#6A38B3]/25 border-[#6A38B3] text-white"
+                : "bg-white/3 border-white/5 text-gray-500"
+            }`}>
+              <span className="font-mono text-[7px] text-[#A0A0A0] leading-none block uppercase">POTENCIAL ALTO</span>
+              <span className="font-sans leading-snug">Estabilização / Retenção</span>
+            </div>
+
+            {/* Top Right: Foco em Expansão */}
+            <div className={`p-2.5 rounded-[10px] border flex flex-col justify-between min-h-[58px] ${
+              scenario.dashboardData.quadrant.includes("Expansão")
+                ? "bg-[#D46900]/25 border-[#D46900] text-white"
+                : "bg-white/3 border-white/5 text-gray-500"
+            }`}>
+              <span className="font-mono text-[7px] text-[#A0A0A0] leading-none block uppercase text-right">POTENCIAL ALTO</span>
+              <span className="font-sans leading-snug">Foco em Expansão / Upsell</span>
+            </div>
+
+            {/* Bottom Left: Risco Técnico */}
+            <div className={`p-2.5 rounded-[10px] border flex flex-col justify-between min-h-[58px] ${
+              scenario.dashboardData.quadrant.includes("Risco") || (hs < 50 && !scenario.dashboardData.quadrant.includes("Expansão") && !scenario.dashboardData.quadrant.includes("Estabilização"))
+                ? "bg-[#ff4444]/25 border-[#ff4444] text-white"
+                : "bg-white/3 border-white/5 text-gray-500"
+            }`}>
+              <span className="font-mono text-[7px] text-[#A0A0A0] leading-none block uppercase">POTENCIAL BAIXO</span>
+              <span className="font-sans leading-snug">Risco Técnico / Recuperação</span>
+            </div>
+
+            {/* Bottom Right: Atendimento Clássico */}
+            <div className={`p-2.5 rounded-[10px] border flex flex-col justify-between min-h-[58px] ${
+              scenario.dashboardData.quadrant.includes("Defesa") || scenario.dashboardData.quadrant.includes("Membro") || scenario.dashboardData.quadrant.includes("Atendimento")
+                ? "bg-[#00ff88]/20 border-[#00ff88]/50 text-white"
+                : "bg-white/3 border-white/5 text-gray-500"
+            }`}>
+              <span className="font-mono text-[7px] text-[#A0A0A0] leading-none block uppercase text-right">POTENCIAL BAIXO</span>
+              <span className="font-sans leading-snug">Atendimento Clássico / Defesa</span>
+            </div>
+
+            {/* Dynamic Plotted Client Dot */}
+            {(() => {
+              const insideExpanding = scenario.dashboardData.quadrant.includes("Expansão");
+              const insideRetain = scenario.dashboardData.quadrant.includes("Estabilização");
+              const insideDefense = scenario.dashboardData.quadrant.includes("Defesa") || scenario.dashboardData.quadrant.includes("Membro") || scenario.dashboardData.quadrant.includes("Atendimento");
+
+              let dotStyle = { top: "25%", left: "75%" }; // Expansão (top-right)
+              if (insideRetain) {
+                dotStyle = { top: "25%", left: "25%" }; // Estabilização (top-left)
+              } else if (insideDefense) {
+                dotStyle = { top: "75%", left: "75%" }; // Defesa (bottom-right)
+              } else if (hs < 50) {
+                dotStyle = { top: "75%", left: "25%" }; // Risco tônico (bottom-left)
+              }
+
+              return (
+                <div
+                  className="absolute w-3.5 h-3.5 bg-gradient-to-r from-white to-[#D46900] rounded-full shadow-lg border border-white -translate-x-1/2 -translate-y-1/2 animate-pulse cursor-default"
+                  style={dotStyle}
+                  title={`${scenario.profile.client}: ${data.quadrant}`}
+                >
+                  <span className="absolute -inset-1.5 bg-[#D46900]/65 rounded-full filter blur-[2px] animate-ping"></span>
+                </div>
+              );
+            })()}
+          </div>
+
+          <div className="text-[9px] font-mono text-gray-400 text-center leading-none mt-1">
+            Quadrante: <span className="text-white font-extrabold uppercase">{data.quadrant}</span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* DASHBOARD LEVEL TABS COMPONENT */}
+      <div className="space-y-4">
+        
+        {/* Dynamic tab selectors */}
+        <div id="dashboard-tabs-navigator" className="flex flex-wrap p-1 bg-[#050B2E] border border-white/10 rounded-[25px] gap-1 shrink-0">
+          <button
+            id="tab-btn-geral"
+            onClick={() => setActiveTab("geral")}
+            className={`flex-1 min-w-[90px] flex items-center justify-center space-x-1 py-2.5 px-3 text-[10px] font-bold rounded-[20px] uppercase tracking-wider transition-all duration-200 cursor-pointer border-0 ${
+              activeTab === "geral"
+                ? "bg-[#D46900] text-white shadow-md font-black"
+                : "text-[#B0B0B0] hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Eye size={12} />
+            <span>Geral</span>
+          </button>
+          
+          <button
+            id="tab-btn-adocao"
+            onClick={() => setActiveTab("adocao")}
+            className={`flex-1 min-w-[90px] flex items-center justify-center space-x-1 py-2.5 px-3 text-[10px] font-bold rounded-[20px] uppercase tracking-wider transition-all duration-200 cursor-pointer border-0 ${
+              activeTab === "adocao"
+                ? "bg-[#D46900] text-white shadow-md font-black"
+                : "text-[#B0B0B0] hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Activity size={12} />
+            <span>Adoção</span>
+          </button>
+          
+          <button
+            id="tab-btn-suporte"
+            onClick={() => setActiveTab("suporte")}
+            className={`flex-1 min-w-[90px] flex items-center justify-center space-x-1 py-2.5 px-3 text-[10px] font-bold rounded-[20px] uppercase tracking-wider transition-all duration-200 cursor-pointer border-0 ${
+              activeTab === "suporte"
+                ? "bg-[#D46900] text-white shadow-md font-black"
+                : "text-[#B0B0B0] hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <ShieldCheck size={12} />
+            <span>Suporte</span>
+          </button>
+          
+          <button
+            id="tab-btn-relacionamento"
+            onClick={() => setActiveTab("relacionamento")}
+            className={`flex-1 min-w-[120px] flex items-center justify-center space-x-1 py-2.5 px-3 text-[10px] font-bold rounded-[20px] uppercase tracking-wider transition-all duration-200 cursor-pointer border-0 ${
+              activeTab === "relacionamento"
+                ? "bg-[#D46900] text-white shadow-md font-black"
+                : "text-[#B0B0B0] hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <HeartHandshake size={12} />
+            <span>Relacionamento</span>
+          </button>
+        </div>
+
+        {/* ACTIVE MODULE CONTAINER GRID */}
+        <div id="dashboard-tab-content" className="bg-white/5 border border-white/5 rounded-[15px] p-5 min-h-[280px] flex flex-col justify-between">
+          
+          {/* TAB 1: GERAL MODULE COMPILATIONS */}
+          {activeTab === "geral" && (
+            <div className="space-y-6 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono text-[#D46900] uppercase tracking-widest font-bold">Métricas Principais de Desempenho (Pilares)</span>
+                <span className="text-[8px] font-mono text-gray-400 uppercase">Integrado via Feed de Saúde</span>
+              </div>
+
+              {/* Individual Pillar Health Overview cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* PILAR DE ADOÇÃO SUMMARY */}
+                <div className="bg-[#050B2E] border border-white/10 p-4 rounded-[12px] flex flex-col justify-between space-y-3 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-[#A0A0A0] uppercase font-bold tracking-wider">01. Pilar Adoção</span>
+                    <span className="text-[9px] bg-[#6A38B3]/20 text-[#6A38B3] border border-[#6A38B3]/30 px-2 py-0.5 rounded uppercase font-bold">Adoção</span>
+                  </div>
+                  <div>
+                    <span className="text-3xl font-display font-normal text-white">{data.adoption.chartValue || 90}%</span>
+                    <p className="text-[10px] text-gray-400 mt-1 line-clamp-2 leading-relaxed">{data.adoption.description}</p>
+                  </div>
+                </div>
+
+                {/* PILAR DE SUPORTE SUMMARY */}
+                <div className="bg-[#050B2E] border border-white/10 p-4 rounded-[12px] flex flex-col justify-between space-y-3 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-[#A0A0A0] uppercase font-bold tracking-wider">02. Pilar Suporte</span>
+                    <span className="text-[9px] bg-[#D46900]/20 text-[#D46900] border border-[#D46900]/30 px-2 py-0.5 rounded list-none uppercase font-bold">Suporte</span>
+                  </div>
+                  <div>
+                    <span className="text-3xl font-display font-normal text-white">{data.support.chartValue || 95}%</span>
+                    <p className="text-[10px] text-gray-400 mt-1 line-clamp-2 leading-relaxed">{data.support.description}</p>
+                  </div>
+                </div>
+
+                {/* PILAR DE RELACIONAMENTO SUMMARY */}
+                <div className="bg-[#050B2E] border border-white/10 p-4 rounded-[12px] flex flex-col justify-between space-y-3 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-[#A0A0A0] uppercase font-bold tracking-wider">03. Pilar Relação</span>
+                    <span className="text-[9px] bg-[#00ff88]/20 text-[#00ff88] border border-[#00ff88]/30 px-2 py-0.5 rounded uppercase font-bold font-mono">Feedback</span>
+                  </div>
+                  <div>
+                    <span className="text-3xl font-display font-normal text-white">{data.relationship.chartValue || 85}%</span>
+                    <p className="text-[10px] text-gray-400 mt-1 line-clamp-2 leading-relaxed">{data.relationship.description}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* TIMELINE DE FATOS HISTÓRICOS CRÔNICOS (DIAGNOSTIC EVENTS) */}
+              <div className="bg-[#050B2E]/80 border border-white/10 p-4 rounded-[12px] space-y-3 shadow-inner">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-[9px] font-mono text-[#D46900] uppercase tracking-wider font-extrabold flex items-center gap-1.5">
+                    <Calendar size={12} /> Log de Eventos Físicos e Milestones da Conta
+                  </span>
+                  <span className="text-[8px] font-mono text-gray-500 uppercase">Histórico Técnico</span>
+                </div>
+                
+                <div className="space-y-3 max-h-[140px] overflow-y-auto custom-scroll pr-1">
+                  {mock.timeline.map((evt, idx) => (
+                    <div key={idx} className="flex gap-3 text-xs items-start">
+                      <span className="text-[9px] font-mono text-gray-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded mt-0.5 shrink-0 block text-center min-w-[55px]">
+                        Há {evt.daysAgo} dias
+                      </span>
+                      <div>
+                        <span className="font-bold text-[#E0E0E0] select-none block leading-tight">{evt.title}</span>
+                        <span className="text-[10px] text-gray-400 leading-normal block mt-0.5">{evt.desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: ADOÇÃO METRIC CORROBORATIONS */}
+          {activeTab === "adocao" && (
+            <div className="space-y-5 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-mono text-[#D46900] uppercase tracking-widest font-black">Histórico e Diagnóstico de Adoção Operacional</h4>
+                <div className="text-[9.5px] font-mono text-[#00ff88] bg-[#00ff88]/10 px-2 py-0.5 rounded border border-[#00ff88]/20 uppercase">
+                  {mock.chartMetricsTitle}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                
+                {/* SVG Adoption chart */}
+                <div className="lg:col-span-7 bg-[#050B2E] border border-white/5 p-4 rounded-[12px] flex flex-col justify-between min-h-[180px]">
+                  <span className="text-[9px] font-mono text-[#A0A0A0] uppercase tracking-wider block mb-4">{mock.chartMetricsTitle} - Visão de 6 Semanas</span>
+                  
+                  <div className="w-full h-24 relative flex items-end gap-3 px-2">
+                    {mock.chartMetricsValue.map((val, idx) => (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                        <span className="text-[8.5px] font-mono text-white leading-none block">{val}%</span>
+                        <div
+                          style={{ height: `${val}%` }}
+                          className="w-full bg-gradient-to-t from-[#6A38B3] to-[#D46900] rounded-t-[4px] relative group transition-all duration-300 hover:opacity-85 shadow"
+                        >
+                          <div className="absolute inset-x-0 bottom-0 top-0 bg-white/3 group-hover:bg-transparent pointer-events-none"></div>
+                        </div>
+                        <span className="text-[8px] font-mono text-gray-400 mt-1 block">S{idx+1}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Adoption analysis comments */}
+                <div className="lg:col-span-5 space-y-4">
+                  <div className="bg-white/5 border border-white/5 p-4 rounded-[12px] space-y-2 text-xs">
+                    <span className="text-[9px] font-mono text-[#D46900] uppercase font-bold block">Status da Aplicação</span>
+                    <p className="text-gray-300 font-light leading-relaxed">{data.adoption.description}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-[10px] font-mono">
+                    {data.adoption.metrics.map((m, idx) => (
+                      <div key={idx} className="bg-white/5 p-3 rounded-[8px] border border-white/5">
+                        <span className="text-[8px] text-gray-400 uppercase block">{m.label}</span>
+                        <span className="text-white font-extrabold text-sm block mt-1 leading-none">{m.value}</span>
+                        {m.comment && <span className="text-[8px] text-[#D46900] block mt-1 italic">{m.comment}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: SUPORTE ANALYTICS AND ACTIVE ISSUES */}
+          {activeTab === "suporte" && (
+            <div className="space-y-5 animate-fadeIn">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-mono text-[#D46900] uppercase tracking-widest font-black">Histórico de Atendimento e SLAs Técnicos</span>
+                <span className="text-[8.5px] font-mono text-gray-400 uppercase">Central Help360</span>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                
+                {/* Tickets Log Simulated Console */}
+                <div className="lg:col-span-7 bg-[#050B2E] border border-white/10 p-4 rounded-[12px] flex flex-col justify-between shadow-md">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+                    <span className="text-[9px] font-mono text-white uppercase font-bold flex items-center gap-1.5">
+                      <Ticket size={12} className="text-[#D46900]" /> Painel de Interações e Chamados de Suporte
+                    </span>
+                    <span className="text-[8px] font-mono text-gray-500 uppercase">Módulo de Chamado</span>
+                  </div>
+
+                  {mock.tickets.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-500">
+                      <ShieldCheck size={36} className="text-[#00ff88]/40 mb-2" />
+                      <span className="text-xs uppercase font-mono font-bold tracking-wider">Nenhum Chamado Ativo ou Aberto</span>
+                      <span className="text-[10px] text-gray-400 font-light mt-1">O cliente não registrou incidentes no período monitorado.</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 flex-1 overflow-y-auto max-h-[160px] custom-scroll pr-1">
+                      {mock.tickets.map((t, idx) => (
+                        <div key={idx} className="bg-white/3 border border-white/15 p-3 rounded-[8px] flex items-center justify-between gap-3 text-xs">
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-[9px] font-mono text-[#D46900] border border-[#D46900]/30 px-1.5 py-0.5 rounded font-black uppercase bg-[#D46900]/10">{t.id}</span>
+                              <span className="font-bold text-[#E0E0E0]">{t.subject}</span>
+                            </div>
+                            <div className="text-[9.5px] text-gray-400">
+                              Aberto por <span className="font-bold text-white">{t.user}</span> • {t.openedAt}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            {t.status === "CRITICO" ? (
+                              <span className="text-[7.5px] bg-[#ff4444]/20 text-[#ff4444] border border-[#ff4444]/40 px-2 py-0.5 rounded font-black uppercase tracking-wider animate-pulse">CRÍTICO / SLA PERTO</span>
+                            ) : (
+                              <span className="text-[7.5px] bg-[#00ff88]/15 text-[#00ff88] border border-[#00ff88]/30 px-2 py-0.5 rounded font-black uppercase tracking-wider">CONCLUÍDO</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Support general SLA KPIs */}
+                <div className="lg:col-span-5 bg-white/5 border border-white/5 p-4 rounded-[12px] flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <span className="text-[9px] font-mono text-[#D46900] uppercase font-bold block">Resumo Técnico de Atendimento</span>
+                    <p className="text-xs text-gray-300 font-light leading-relaxed">{data.support.description}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mt-4 text-[10px] font-mono">
+                    {data.support.metrics.map((m, idx) => (
+                      <div key={idx} className="bg-[#050B2E] border border-white/10 p-3 rounded-[8px]">
+                        <span className="text-[8px] text-gray-400 block uppercase leading-none">{m.label}</span>
+                        <span className="text-white font-extrabold text-xs block mt-1.5 leading-none">{m.value}</span>
+                        {m.comment && <span className="text-[8px] text-gray-500 block mt-1">{m.comment}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: RELACIONAMENTO AND SENTIMENT LOG */}
+          {activeTab === "relacionamento" && (
+            <div className="space-y-5 animate-fadeIn">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-mono text-[#D46900] uppercase tracking-widest font-black">Histórico de Pesquisas de NPS e Engajamento Executivo</span>
+                <span className="text-[8.5px] font-mono text-gray-400 uppercase">Satisfação Humana</span>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                
+                {/* Specific Stakeholders NPS Rating simulation cards */}
+                <div className="lg:col-span-7 space-y-3.5">
+                  <span className="text-[9px] font-mono text-[#A0A0A0] uppercase tracking-wider block">Mapeamento e Notas Recentes de NPS</span>
+                  
+                  {scenario.stakeholders.map((stk, idx) => {
+                    // Detect if this stakeholder has an NPS in relations data
+                    const matchedMetric = data.relationship.metrics.find(m =>
+                      m.label.toLowerCase().includes(stk.name.toLowerCase()) ||
+                      m.label.toLowerCase().includes(stk.role.split(" ")[0].toLowerCase())
+                    );
+                    
+                    const scoreText = matchedMetric ? matchedMetric.value : "Não Declarado";
+                    const isDetractor = matchedMetric && (scoreText.toString().startsWith("3") || scoreText.toString().startsWith("4") || scoreText.toString().startsWith("5") || scoreText.toString().includes("Detrator"));
+
+                    return (
+                      <div key={idx} className="bg-[#050B2E] border-l-4 border-l-[#6A38B3] border border-white/10 p-3 rounded-[8px] flex items-start gap-3">
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-[#E0E0E0] text-xs block">{stk.name} ({stk.role})</span>
+                            <span className="text-[9px] bg-white/5 border border-white/10 text-gray-300 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider font-mono">
+                              NPS: {scoreText}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-gray-400 pr-2 italic">"{stk.comment === "Nenhum registro." ? "Operador inativo temporário ou vácuo de resposta." : stk.comment}"</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* CSM Touchpoint details and loop closed SLAs */}
+                <div className="lg:col-span-5 bg-white/5 border border-white/5 p-4 rounded-[12px] flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <span className="text-[9px] font-mono text-[#D46900] uppercase font-bold block">Status do Sentimento Executivo</span>
+                    <p className="text-xs text-gray-300 font-light leading-relaxed">{data.relationship.description}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mt-4 text-[10px] font-mono">
+                    {data.relationship.metrics.map((m, idx) => (
+                      <div key={idx} className="bg-[#050B2E] border border-white/10 p-3 rounded-[8px]">
+                        <span className="text-[8px] text-gray-400 block uppercase leading-none">{m.label}</span>
+                        <span className="text-white font-extrabold text-xs block mt-1.5 leading-none">{m.value}</span>
+                        {m.comment && <span className="text-[8px] text-gray-500 block mt-1 italic">{m.comment}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+
+    </div>
+  );
+};

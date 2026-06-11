@@ -1,0 +1,187 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect } from "react";
+import { Scenario, GameOption } from "../types";
+import { CheckCircle2, AlertTriangle, Play, RefreshCw, Award, ArrowRight, Skull, Rocket } from "lucide-react";
+
+interface GameScreenProps {
+  scenario: Scenario;
+  onStepComplete: () => void;
+  onScenarioFinish: () => void;
+  currentStepIndex: number;
+  setCurrentStepIndex: React.Dispatch<React.SetStateAction<number>>;
+}
+
+export const GameScreen: React.FC<GameScreenProps> = ({
+  scenario,
+  onStepComplete,
+  onScenarioFinish,
+  currentStepIndex,
+  setCurrentStepIndex
+}) => {
+  const currentStep = scenario.steps[currentStepIndex];
+
+  // Game state
+  const [selectedOption, setSelectedOption] = useState<GameOption | null>(null);
+  const [showResult, setShowResult] = useState(false);
+
+  // Reset state when step index has changed
+  useEffect(() => {
+    setSelectedOption(null);
+    setShowResult(false);
+  }, [currentStepIndex, scenario.id]);
+
+  if (!currentStep) return null;
+
+  const handleOptionSelect = (option: GameOption) => {
+    if (showResult) return; // Prevent clicking multiple times
+    setSelectedOption(option);
+    setShowResult(true);
+    if (option.isCorrect) {
+      onStepComplete();
+    }
+  };
+
+  const handleNextStep = () => {
+    if (currentStepIndex < scenario.steps.length - 1) {
+      setCurrentStepIndex(prev => prev + 1);
+    } else {
+      onScenarioFinish();
+    }
+  };
+
+  const handleTryAgain = () => {
+    setSelectedOption(null);
+    setShowResult(false);
+  };
+
+  const progressPercentage = ((currentStepIndex + 1) / scenario.steps.length) * 100;
+
+  return (
+    <div id="game-screen-root" className="bg-[#050B2E]/60 backdrop-blur-md border border-white/10 rounded-[15px] p-8 text-white space-y-6 relative overflow-hidden flex flex-col justify-between shadow-2xl">
+      
+      {/* Decorative cyber grids in card */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#D46900] via-[#6A38B3] to-[#00ff88]"></div>
+
+      {/* STEP PROGRESS MONITOR */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center text-xs font-mono">
+          <span className="text-[#D46900] font-bold uppercase tracking-wider">Cadência de Decisões Táticas</span>
+          <span className="text-white font-extrabold bg-[#6A38B3]/35 px-3 py-1 rounded-full border border-white/5">
+            Passo {currentStepIndex + 1} de {scenario.steps.length}
+          </span>
+        </div>
+        
+        {/* Glow progress track bar */}
+        <div className="w-full bg-[#050B2E] h-2.5 rounded-full overflow-hidden border border-white/10 relative">
+          <div
+            className="bg-gradient-to-r from-[#D46900] to-[#6A38B3] h-full rounded-full transition-all duration-300"
+            style={{ width: `${progressPercentage}%` }}
+          ></div>
+        </div>
+      </div>
+
+      {/* ACTIVE STEP DETAILS */}
+      <div id="active-step-challenge" className="space-y-4">
+        <div>
+          <span className="inline-block px-4 py-1 bg-[#D46900] rounded-full text-[10px] font-black uppercase tracking-widest text-white mb-3">
+            Situação Crítica
+          </span>
+          <h3 id="step-title-display" className="text-2xl leading-snug font-medium text-white font-sans mt-1">
+            {currentStep.title}
+          </h3>
+        </div>
+        
+        <div className="text-lg text-[#FFFFFF]/80 border-l-2 border-[#6A38B3] pl-6 leading-relaxed italic">
+          {currentStep.context}
+        </div>
+      </div>
+
+      {/* OPTIONS CONTAINER */}
+      {!showResult ? (
+        <div id="options-pill-grid" className="grid grid-cols-1 gap-4 pt-4">
+          {currentStep.options.map((opt, idx) => (
+            <button
+              key={opt.id}
+              onClick={() => handleOptionSelect(opt)}
+              id={`option-btn-${opt.id}`}
+              className="w-full flex items-center justify-between p-5 bg-white text-[#050B2E] rounded-[25px] hover:bg-[#D46900] hover:text-white transition-all group border-0 text-left cursor-pointer font-sans shadow-md"
+            >
+              <div className="flex items-center space-x-4 flex-1 pr-4">
+                <span className="bg-[#050B2E] text-white font-mono font-black w-7 h-7 flex items-center justify-center rounded-full text-xs shrink-0 group-hover:bg-white group-hover:text-[#D46900] transition-colors">
+                  {opt.id}
+                </span>
+                <span className="font-extrabold uppercase text-[11px] sm:text-xs tracking-wide leading-relaxed">
+                  {opt.text}
+                </span>
+              </div>
+              <div className="w-6 h-6 rounded-full border-2 border-[#050B2E] group-hover:border-white shrink-0 flex items-center justify-center transition-colors">
+                <div className="w-2.5 h-2.5 bg-[#D46900] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        /* CHALLENGE DECISION FEEDBACK HOVER METERS */
+        <div id="step-feedback-panel" className="pt-2">
+          {selectedOption?.isCorrect ? (
+            /* CORRECT FEEDBACK SHOWCASE */
+            <div className="bg-[#00ff88]/10 border-2 border-[#00ff88]/30 p-6 rounded-[20px] space-y-4 animate-fadeIn relative text-white">
+              <div className="flex items-center space-x-2 text-[#00ff88]">
+                <CheckCircle2 size={24} className="shrink-0" />
+                <h4 className="font-display font-normal uppercase tracking-wider text-sm leading-none">Decisão Aprovada pelo Playbook!</h4>
+              </div>
+              <div className="text-sm leading-relaxed text-[#E0E0E0] border-l-2 border-[#00ff88] pl-6 italic">
+                {selectedOption.feedback}
+              </div>
+
+              <div className="pt-2">
+                <button
+                  id="btn-next-step"
+                  onClick={handleNextStep}
+                  className="w-full sm:w-auto bg-[#D46900] hover:bg-[#ff7f00] text-white font-black text-xs uppercase tracking-widest px-8 py-3.5 rounded-[25px] flex items-center justify-center space-x-2 transition-all shadow-lg active:scale-95 cursor-pointer border-0"
+                >
+                  <span>
+                    {currentStepIndex === scenario.steps.length - 1
+                      ? "Concluir Jornada Tática"
+                      : "Avançar para o Próximo Passo"}
+                  </span>
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* INCORRECT GAME OVER SHOWCASE */
+            <div className="bg-[#ff4444]/10 border-2 border-[#ff4444]/30 p-6 rounded-[20px] space-y-4 animate-shake relative text-white">
+              <div className="flex items-center space-x-3 text-[#ff4444]">
+                <Skull size={28} className="shrink-0 animate-bounce" />
+                <div>
+                  <h4 className="font-display font-normal uppercase tracking-wider text-xs leading-none text-white">CONTRATO COM RISCO DE CHURN! (GAME OVER)</h4>
+                  <span className="text-[10px] font-mono text-[#ff4444] uppercase tracking-wider font-bold mt-1 block">Ação equivocada ou arrogante detectada</span>
+                </div>
+              </div>
+              
+              <div className="text-sm leading-relaxed text-[#E0E0E0] border-l-2 border-[#ff4444] pl-6 italic">
+                {selectedOption?.feedback}
+              </div>
+
+              <div className="pt-2">
+                <button
+                  id="btn-try-again"
+                  onClick={handleTryAgain}
+                  className="bg-transparent hover:bg-[#ff4444]/10 border-2 border-[#ff4444] text-[#ff4444] font-black text-xs uppercase tracking-widest px-8 py-3.5 rounded-[25px] flex items-center justify-center space-x-2 transition-all cursor-pointer"
+                >
+                  <RefreshCw size={14} />
+                  <span>Refazer Decisão (Tentar Novamente)</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};

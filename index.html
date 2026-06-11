@@ -1,0 +1,530 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect } from "react";
+import { Scenario } from "../types";
+import { scGabaritos } from "../data/gabaritos";
+import { 
+  Award, 
+  CheckCircle2, 
+  XCircle, 
+  RefreshCw, 
+  ClipboardCopy, 
+  ArrowRight, 
+  FileText, 
+  Sparkles, 
+  Target, 
+  Check, 
+  AlertCircle,
+  HelpCircle,
+  TrendingUp,
+  Sliders,
+  Notebook,
+  Lock,
+  Unlock
+} from "lucide-react";
+
+interface AICoachProps {
+  scenario: Scenario;
+}
+
+export const AICoach: React.FC<AICoachProps> = ({ scenario }) => {
+  const gabarito = scGabaritos[scenario.id];
+
+  // Primary state: checked state for each of the criteria
+  const [checkedState, setCheckedState] = useState<Record<string, boolean>>({});
+  const [evaluatorNotes, setEvaluatorNotes] = useState<string>("");
+  const [copySuccess, setCopySuccess] = useState<boolean>(false);
+
+  // Security passcode state ("720")
+  const [unlocked, setUnlocked] = useState<boolean>(() => {
+    return sessionStorage.getItem("v360_gabarito_unlocked") === "true";
+  });
+  const [passcode, setPasscode] = useState<string>("");
+  const [passcodeError, setPasscodeError] = useState<boolean>(false);
+
+  // Keypad operations
+  const handleNumberPress = (num: string) => {
+    if (passcode.length < 3) {
+      const newVal = passcode + num;
+      setPasscode(newVal);
+      setPasscodeError(false);
+
+      if (newVal === "720") {
+        setTimeout(() => {
+          setUnlocked(true);
+          sessionStorage.setItem("v360_gabarito_unlocked", "true");
+        }, 150);
+      } else if (newVal.length === 3) {
+        setTimeout(() => {
+          setPasscodeError(true);
+          setTimeout(() => {
+            setPasscode("");
+            setPasscodeError(false);
+          }, 600);
+        }, 150);
+      }
+    }
+  };
+
+  const handleBackspace = () => {
+    if (passcode.length > 0) {
+      setPasscode(prev => prev.slice(0, -1));
+      setPasscodeError(false);
+    }
+  };
+
+  const handleClear = () => {
+    setPasscode("");
+    setPasscodeError(false);
+  };
+
+  // Capture keyboard input for passcode
+  useEffect(() => {
+    if (unlocked) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === "INPUT" || 
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
+      if (e.key >= "0" && e.key <= "9") {
+        handleNumberPress(e.key);
+      } else if (e.key === "Backspace") {
+        handleBackspace();
+      } else if (e.key === "Escape") {
+        handleClear();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [passcode, unlocked]);
+
+  // Load state from localStorage on scenario switch
+  useEffect(() => {
+    if (!gabarito) return;
+    const storageKey = `v360_gabarito_eval_${scenario.id}`;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setCheckedState(parsed.checked || {});
+        setEvaluatorNotes(parsed.notes || "");
+      } catch (e) {
+        // Fallback
+        const initialChecked: Record<string, boolean> = {};
+        gabarito.criteria.forEach(c => {
+          initialChecked[c.id] = false;
+        });
+        setCheckedState(initialChecked);
+        setEvaluatorNotes("");
+      }
+    } else {
+      const initialChecked: Record<string, boolean> = {};
+      gabarito.criteria.forEach(c => {
+        initialChecked[c.id] = false;
+      });
+      setCheckedState(initialChecked);
+      setEvaluatorNotes("");
+    }
+  }, [scenario.id, gabarito]);
+
+  // Persist state to localStorage
+  const saveToStorage = (updatedChecked: Record<string, boolean>, updatedNotes: string) => {
+    const storageKey = `v360_gabarito_eval_${scenario.id}`;
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        checked: updatedChecked,
+        notes: updatedNotes,
+        updatedAt: new Date().toISOString()
+      })
+    );
+  };
+
+  if (!gabarito) {
+    return (
+      <div className="bg-[#050B2E]/60 backdrop-blur-md border border-white/10 rounded-[15px] p-8 text-center text-gray-400">
+        <AlertCircle className="mx-auto text-[#D46900] mb-3" size={32} />
+        <p className="text-xs font-mono uppercase tracking-widest text-white">Gabarito Inexistente para o Cenário #{scenario.id}</p>
+      </div>
+    );
+  }
+
+  // Calculation helpers
+  const totalCriteriaCount = gabarito.criteria.length;
+  const compliedCriteriaCount = Object.values(checkedState).filter(Boolean).length;
+  const rawScore = totalCriteriaCount > 0 ? (compliedCriteriaCount / totalCriteriaCount) * 100 : 0;
+  const finalScore = Math.round(rawScore);
+
+  // Recommendation thresholds
+  const getRecommendationText = (score: number) => {
+    if (score === 100) return { label: "Aprovado com Excelência - Perfil Advisory", color: "text-[#00ff88]", badge: "bg-[#00ff88]/15 border-[#00ff88]/30 text-[#00ff88]" };
+    if (score >= 75) return { label: "Aprovado - Perfil Mapeador", color: "text-cyan-400", badge: "bg-cyan-500/15 border-cyan-500/30 text-cyan-400" };
+    if (score >= 50) return { label: "Aprovado com Ressalvas - Requer Acompanhamento", color: "text-[#D46900]", badge: "bg-[#D46900]/15 border-[#D46900]/30 text-[#D46900]" };
+    return { label: "Reprovado - Requer Retreinamento do Playbook", color: "text-red-400", badge: "bg-red-500/15 border-red-500/30 text-red-400" };
+  };
+
+  const recommendation = getRecommendationText(finalScore);
+
+  const toggleCriterion = (criterionId: string) => {
+    const updated = {
+      ...checkedState,
+      [criterionId]: !checkedState[criterionId]
+    };
+    setCheckedState(updated);
+    saveToStorage(updated, evaluatorNotes);
+  };
+
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setEvaluatorNotes(val);
+    saveToStorage(checkedState, val);
+  };
+
+  const handleResetEvaluation = () => {
+    const cleared: Record<string, boolean> = {};
+    gabarito.criteria.forEach(c => {
+      cleared[c.id] = false;
+    });
+    setCheckedState(cleared);
+    setEvaluatorNotes("");
+    const storageKey = `v360_gabarito_eval_${scenario.id}`;
+    localStorage.removeItem(storageKey);
+  };
+
+  const handleCopyReport = () => {
+    const textBlocks = [
+      `=== RELATÓRIO DE AVALIAÇÃO - COCKPIT V360 ===`,
+      `Cenário: ${gabarito.title}`,
+      `Resultado Final: ${finalScore}% de Desempenho`,
+      `Parecer: ${recommendation.label}`,
+      `-------------------------------------------`,
+      `CRITÉRIOS ANALÍTICOS AVALIADOS:`,
+      ...gabarito.criteria.map(c => {
+        const met = checkedState[c.id] ? "MET [X]" : "NOT MET [ ]";
+        return `- [${met}] ${c.title}\n  Expectativa: ${c.expectation}`;
+      }),
+      `-------------------------------------------`,
+      `OBSERVAÇÕES ADICIONAIS DO AVALIADOR:`,
+      evaluatorNotes || "(Nenhuma observacão registrada pelo facilitador)"
+    ];
+
+    navigator.clipboard.writeText(textBlocks.join("\n\n")).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 3000);
+    });
+  };
+
+  if (!unlocked) {
+    return (
+      <div id="gabarito-security-lock" className="max-w-md mx-auto bg-gradient-to-b from-[#090D22] to-[#010310] border-2 border-white/10 rounded-[24px] p-8 mt-4 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center min-h-[500px]">
+        {/* Background glow effects */}
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#D46900]/10 rounded-full blur-[60px] pointer-events-none"></div>
+        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-[#6A38B3]/10 rounded-full blur-[60px] pointer-events-none"></div>
+
+        {/* Lock Icon header */}
+        <div className="relative mb-6">
+          <div className="w-16 h-16 rounded-full bg-[#D46900]/10 border border-[#D46900]/20 flex items-center justify-center text-[#D46900] animate-pulse">
+            <Lock size={28} />
+          </div>
+          <div className="absolute inset-0 rounded-full border border-[#D46900]/30 scale-110 pointer-events-none opacity-55 animate-ping"></div>
+        </div>
+
+        <h3 className="text-xl font-display uppercase tracking-wider text-white text-center leading-none font-normal">
+          Área Reservada
+        </h3>
+        <p className="text-[10px] font-mono text-gray-400 mt-3 text-center max-w-xs leading-relaxed uppercase">
+          Gabarito de simulação protegido.<br />
+          Insira o código de segurança de 3 dígitos para liberar o acesso da banca.
+        </p>
+
+        {/* Password slots display */}
+        <div className="flex justify-center gap-3.5 my-8">
+          {[0, 1, 2].map((index) => {
+            const digits = passcode.split("");
+            const hasDigit = digits[index] !== undefined;
+            return (
+              <div
+                key={index}
+                className={`w-14 h-16 rounded-[12px] border-2 flex items-center justify-center text-2xl font-mono transition-all duration-300 ${
+                  passcodeError
+                    ? "border-red-500 bg-red-500/15 text-red-400 animate-bounce"
+                    : hasDigit
+                    ? "border-[#D46900] bg-[#D46900]/10 text-[#D46900] shadow-[0_0_15px_-4px_rgba(212,105,0,0.5)] scale-105 font-bold"
+                    : "border-white/10 bg-black/40 text-gray-650"
+                }`}
+              >
+                {hasDigit ? "*" : "•"}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Numerical Keypad Grid */}
+        <div className="grid grid-cols-3 gap-3 w-full max-w-[280px]">
+          {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((num) => (
+            <button
+              key={num}
+              onClick={() => handleNumberPress(num)}
+              className="h-14 font-mono text-lg font-bold text-white bg-white/5 border border-white/5 rounded-[12px] hover:bg-white/10 active:bg-[#D46900]/20 active:border-[#D46900]/30 transition-all flex items-center justify-center cursor-pointer outline-none"
+            >
+              {num}
+            </button>
+          ))}
+          {/* Row 4 (Clear, 0, Backspace) */}
+          <button
+            onClick={handleClear}
+            className="h-14 font-mono text-xs uppercase tracking-wider text-gray-400 bg-transparent rounded-[12px] hover:bg-white/5 transition-all flex items-center justify-center cursor-pointer outline-none border-0"
+          >
+            Limpar
+          </button>
+          <button
+            onClick={() => handleNumberPress("0")}
+            className="h-14 font-mono text-lg font-bold text-white bg-white/5 border border-white/5 rounded-[12px] hover:bg-white/10 active:bg-[#D46900]/20 active:border-[#D46900]/30 transition-all flex items-center justify-center cursor-pointer outline-none"
+          >
+            0
+          </button>
+          <button
+            onClick={handleBackspace}
+            className="h-14 font-mono text-xs text-gray-400 bg-transparent rounded-[12px] hover:bg-white/5 transition-all flex items-center justify-center cursor-pointer outline-none border-0 uppercase"
+          >
+            Apagar
+          </button>
+        </div>
+
+        <p className="text-[9px] font-mono text-gray-500 uppercase tracking-widest text-center mt-6">
+          Drives V360 Secure Vault
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div id="simulation-gabarito-dashboard" className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+      
+      {/* LEFT COLUMN: SCENARIO METADATA REVEAL (7 COLS) */}
+      <div className="xl:col-span-7 space-y-6">
+        
+        {/* Core Scenario Revelation Card */}
+        <div className="bg-[#050B2E]/60 backdrop-blur-md border border-white/10 rounded-[15px] p-6 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#6A38B3]/10 rounded-full blur-[40px] pointer-events-none"></div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <span className="bg-[#D46900]/15 border border-[#D46900]/30 text-[#D46900] px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-widest font-black">
+                Dossiê Revelado
+              </span>
+              <span className="text-gray-400 font-mono text-[10px]">Cenário #{scenario.id}</span>
+            </div>
+
+            <div>
+              <h2 className="text-2xl font-display uppercase tracking-tight text-white leading-tight font-normal">
+                {gabarito.title}
+              </h2>
+              <p className="text-xs text-gray-400 font-sans mt-2 leading-relaxed">
+                <strong className="text-white uppercase text-[10px] tracking-wide block mb-1">Objetivo Original:</strong>
+                {gabarito.originalObjective}
+              </p>
+            </div>
+
+            <div className="pt-4 border-t border-white/5 space-y-3">
+              <div>
+                <span className="text-[#D46900] text-[10px] font-mono uppercase tracking-wider block font-bold">O Cenário (Contexto do Facilitador):</span>
+                <p className="text-xs text-gray-300 font-light leading-relaxed mt-1">
+                  {gabarito.generalSummary}
+                </p>
+              </div>
+
+              <div className="p-4 bg-gradient-to-r from-[#6A38B3]/10 to-transparent border-l-4 border-l-[#6A38B3] rounded-r-[10px] mt-4">
+                <span className="text-[#E0E0E0] text-[10px] font-mono uppercase tracking-wider block font-bold">Conclusão Estratégica Esperada:</span>
+                <p className="text-xs text-gray-300 font-light leading-relaxed mt-1">
+                  {gabarito.expectedConclusion}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Expectation Rubrics Matrix */}
+        <div className="bg-[#050B2E]/60 backdrop-blur-md border border-white/10 rounded-[15px] p-6 shadow-2xl space-y-4">
+          <div className="flex items-center space-x-2 text-[#D46900]">
+            <Target size={18} />
+            <h4 className="font-display uppercase tracking-wider text-xs text-white font-normal">Matriz de Comportamento do Sucesso</h4>
+          </div>
+
+          <div className="space-y-4 pr-1">
+            {gabarito.criteria.map((c, index) => {
+              const completed = !!checkedState[c.id];
+              return (
+                <div 
+                  key={c.id} 
+                  className={`p-5 rounded-[12px] border transition-all duration-300 relative overflow-hidden ${
+                    completed 
+                      ? "bg-gradient-to-b from-[#0e2c22] to-[#04100b] border-[#00ff88]/30" 
+                      : "bg-[#050B2E]/90 border-white/5"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest font-bold">Critério {index + 1}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono uppercase font-black ${
+                          completed ? "bg-[#00ff88]/20 text-[#00ff88]" : "bg-white/5 text-gray-400"
+                        }`}>
+                          {completed ? "Cumpriu" : "Pendente"}
+                        </span>
+                      </div>
+                      <h5 className="font-display uppercase tracking-wide text-xs text-white font-normal">
+                        {c.title}
+                      </h5>
+                      <p className="text-[11px] text-gray-300 leading-relaxed font-light">
+                        <strong className="text-white block text-[9px] font-mono uppercase tracking-wider mb-1">O que o CS deve fazer:</strong>
+                        {c.expectation}
+                      </p>
+                    </div>
+
+                    {/* Check indicator circle */}
+                    <button 
+                      onClick={() => toggleCriterion(c.id)}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer outline-none border shrink-0 ${
+                        completed 
+                          ? "bg-[#00ff88] border-transparent text-[#050B2E]" 
+                          : "bg-transparent border-white/20 text-transparent hover:border-[#D46900]"
+                      }`}
+                    >
+                      <Check size={14} className="stroke-[3]" />
+                    </button>
+                  </div>
+
+                  <div className="mt-4 pt-3.5 border-t border-white/5">
+                    <span className="text-[#D46900] text-[9px] font-mono uppercase tracking-wider block font-bold mb-1.5">Atuação Sugerida no Roleplay:</span>
+                    <div className="bg-black/45 hover:bg-black/60 transition-colors rounded-[8px] p-3 border border-white/5 scroll-py-1">
+                      <span className="text-[10px] font-mono italic text-[#ececec] block leading-relaxed font-medium">
+                        "{c.example}"
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+      </div>
+
+      {/* RIGHT COLUMN: EVALUATOR CONSOLE & CHECKLIST (5 COLS) */}
+      <div className="xl:col-span-5 space-y-6">
+        
+        {/* Real-time Scoring Card */}
+        <div className="bg-gradient-to-b from-[#0a0f35] to-[#04061a] border-2 border-white/10 rounded-[15px] p-6 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-[#6A38B3]"></div>
+          
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Sliders size={18} className="text-[#D46900]" />
+                <h4 className="font-display uppercase tracking-widest text-xs text-white font-normal">Banca Examinadora V360</h4>
+              </div>
+              <span className="text-[9px] font-mono text-gray-500 uppercase border border-white/5 bg-black/40 px-3 py-1 rounded-full font-bold">
+                Avaliação Física
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center py-6 border-b border-white/5 space-y-4">
+              <span className="text-[10px] font-mono uppercase text-gray-400 tracking-widest">Aproveitamento do Candidato</span>
+              <div className="relative flex items-center justify-center">
+                
+                {/* Radial metric bar styled via Tailwind */}
+                <div className="w-28 h-28 rounded-full border-[8px] border-white/5 flex flex-col items-center justify-center relative">
+                  <span className="text-4xl font-display text-white font-normal tracking-tighter leading-none">
+                    {finalScore}%
+                  </span>
+                  <span className="text-[9px] font-mono text-gray-400 uppercase tracking-wide mt-1">Nível</span>
+                  
+                  {/* Glowing border overlays */}
+                  <div className="absolute inset-0 rounded-full border border-white/10 opacity-30 animate-pulse pointer-events-none"></div>
+                </div>
+              </div>
+
+              <div className="text-center space-y-1 max-w-xs mx-auto">
+                <span className="text-[9px] font-mono text-gray-500 uppercase block tracking-wider">Parecer do Facilitador</span>
+                <span className={`text-[11px] font-black uppercase tracking-wider block leading-snug px-3 py-1.5 rounded-full border ${recommendation.badge}`}>
+                  {recommendation.label}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick interactive counters */}
+            <div className="grid grid-cols-2 gap-4 text-center font-mono text-xs">
+              <div className="bg-white/5 rounded-[10px] p-3 border border-white/5">
+                <span className="text-gray-500 uppercase text-[9px] block">Criterios Atendidos</span>
+                <span className="text-white font-black text-lg block mt-1">{compliedCriteriaCount} de {totalCriteriaCount}</span>
+              </div>
+              <div className="bg-white/5 rounded-[10px] p-3 border border-white/5">
+                <span className="text-gray-500 uppercase text-[9px] block">Status Geral</span>
+                <span className={`font-black text-lg block mt-1 uppercase ${finalScore >= 75 ? "text-[#00ff88]" : finalScore >= 50 ? "text-[#D46900]" : "text-red-400"}`}>
+                  {finalScore >= 75 ? "Aprovado" : finalScore >= 50 ? "Aprovado*" : "Reprovado"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Facilitator Notes Box */}
+        <div className="bg-[#050B2E]/60 backdrop-blur-md border border-white/10 rounded-[15px] p-6 shadow-2xl space-y-4">
+          <div className="flex items-center space-x-2 text-[#D46900]">
+            <Notebook size={16} />
+            <h4 className="font-display uppercase tracking-widest text-xs text-white font-normal">Caderno de Feedback do Facilitador</h4>
+          </div>
+
+          <p className="text-[10px] text-gray-400 leading-relaxed font-light">
+            Escreva apontamentos qualitativos sobre o comportamento relacional, presença vocal, postura, dicção, 
+            e adequação de tom apresentados pelo Customer Success durante o roleplay.
+          </p>
+
+          <textarea
+            value={evaluatorNotes}
+            onChange={handleNotesChange}
+            placeholder="Exemplo de feedback: 'O candidato demonstrou ótima inteligência emocional no ponto crítico sobre o bug do SAP, contudo, hesitou em fundamentar os ganhos de FTEs logo de saída na pauta de business case...'"
+            className="w-full h-32 bg-black/45 border border-white/10 rounded-[10px] p-3 text-xs text-white placeholder-gray-500 outline-none focus:border-[#D46900] transition-colors resize-none font-sans"
+          />
+
+          <div className="pt-2 flex flex-col gap-3">
+            <button
+              onClick={handleCopyReport}
+              className="w-full bg-[#D46900] hover:bg-[#ff7f00] text-white py-3 rounded-[25px] text-[10px] uppercase font-black tracking-widest transition-all shadow-md flex items-center justify-center space-x-2 border-0 cursor-pointer"
+            >
+              <ClipboardCopy size={13} />
+              <span>{copySuccess ? "Relatório Copiado!" : "Copiar Relatório Completo"}</span>
+            </button>
+
+            <button
+              onClick={handleResetEvaluation}
+              className="w-full bg-transparent hover:bg-white/5 text-gray-400 hover:text-white py-2.5 rounded-[25px] text-[9px] uppercase font-bold tracking-wider transition-all flex items-center justify-center space-x-1.5 border border-white/10 cursor-pointer"
+            >
+              <RefreshCw size={11} />
+              <span>Limpar Esta Avaliação</span>
+            </button>
+          </div>
+
+          {copySuccess && (
+            <div className="p-3 bg-[#00ff88]/10 border border-[#00ff88]/30 rounded-[10px] text-center text-[#00ff88] text-[9px] font-mono uppercase tracking-widest animate-pulse">
+              Copiado com sucesso para a área de transferência!
+            </div>
+          )}
+        </div>
+
+      </div>
+
+    </div>
+  );
+};
